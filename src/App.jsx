@@ -7,6 +7,7 @@ import History from "./pages/History";
 import Profile from "./pages/Profile";
 import { measureWebVitals } from "./utils/performance";
 import { ParentProvider, useParent } from "./contexts/ParentContext";
+import { TeacherProvider, useTeacher } from "./contexts/TeacherContext";
 
 // Lazy load parent components for code splitting
 const ParentLogin = lazy(() => import("./pages/parent/ParentLogin"));
@@ -15,6 +16,19 @@ const ParentDashboard = lazy(() => import("./pages/parent/ParentDashboard"));
 const ParentVoiceAssistant = lazy(() => import("./pages/parent/ParentVoiceAssistant"));
 const ParentProfile = lazy(() => import("./pages/parent/ParentProfile"));
 const ParentLayout = lazy(() => import("./layouts/ParentLayout"));
+
+// Lazy load teacher components for code splitting
+const TeacherLogin = lazy(() => import("./pages/teacher/TeacherLogin"));
+const TeacherRegister = lazy(() => import("./pages/teacher/TeacherRegister"));
+const TeacherDashboard = lazy(() => import("./pages/teacher/TeacherDashboard"));
+const TeacherUpload = lazy(() => import("./pages/teacher/TeacherUpload"));
+const TeacherLayout = lazy(() => import("./layouts/TeacherLayout"));
+
+// Lazy load student components for teacher content access
+const FindTeachers = lazy(() => import("./pages/student/FindTeachers"));
+const TeacherVideos = lazy(() => import("./pages/student/TeacherVideos"));
+const VideoPlayer = lazy(() => import("./pages/student/VideoPlayer"));
+const MyTeachers = lazy(() => import("./pages/student/MyTeachers"));
 
 // Loading component for lazy-loaded routes
 function LoadingSpinner() {
@@ -35,6 +49,21 @@ function ProtectedParentRoute({ children }) {
   
   if (!parent) {
     return <Navigate to="/parent/login" replace />;
+  }
+  
+  return children;
+}
+
+// Protected route component for teacher pages
+function ProtectedTeacherRoute({ children }) {
+  const { teacher, loading } = useTeacher();
+  
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!teacher) {
+    return <Navigate to="/teacher/login" replace />;
   }
   
   return children;
@@ -145,6 +174,86 @@ export default function App() {
                   </ProtectedParentRoute>
                 </Suspense>
               </ParentProvider>
+            }
+          />
+
+          {/* Teacher Routes (New) - Wrapped with TeacherProvider and Suspense */}
+          <Route
+            path="/teacher/login"
+            element={
+              <TeacherProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <TeacherLogin />
+                </Suspense>
+              </TeacherProvider>
+            }
+          />
+          <Route
+            path="/teacher/register"
+            element={
+              <TeacherProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <TeacherRegister />
+                </Suspense>
+              </TeacherProvider>
+            }
+          />
+          <Route
+            path="/teacher/dashboard"
+            element={
+              <TeacherProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ProtectedTeacherRoute>
+                    <TeacherDashboard />
+                  </ProtectedTeacherRoute>
+                </Suspense>
+              </TeacherProvider>
+            }
+          />
+          <Route
+            path="/teacher/upload"
+            element={
+              <TeacherProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ProtectedTeacherRoute>
+                    <TeacherUpload />
+                  </ProtectedTeacherRoute>
+                </Suspense>
+              </TeacherProvider>
+            }
+          />
+
+          {/* Student Routes for Teacher Content Access */}
+          <Route
+            path="/find-teachers"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <FindTeachers />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/teacher/:teacherId/videos/:classLevel"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <TeacherVideos />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/watch/:videoId"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <VideoPlayer />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/my-teachers"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <MyTeachers />
+              </Suspense>
             }
           />
         </Routes>

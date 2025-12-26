@@ -1,12 +1,14 @@
 // src/pages/Profile.jsx
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import Login from "./Login";
-import { LogOut, Star, Edit, Save, Upload, X, Loader2 } from "lucide-react";
+import { LogOut, Star, Edit, Save, Upload, X, Loader2, GraduationCap } from "lucide-react";
 import LazyImage from "../components/LazyImage";
 
 export default function Profile() {
   const { user, loading, logout, updateUser } = useUser();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -232,6 +234,27 @@ export default function Profile() {
             </div>
             <div className="text-sm text-gray-300">Achievement Rating</div>
           </div>
+        </div>
+      </div>
+
+      {/* Teacher Portal Access */}
+      <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-2xl p-6 w-full max-w-md shadow-xl mb-6 border border-purple-300/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <GraduationCap className="text-white" size={24} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">Teaching Hub</h3>
+              <p className="text-white/70 text-sm">Share knowledge & inspire students</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/teacher/login')}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 transition-all duration-200 text-sm"
+          >
+            Access
+          </button>
         </div>
       </div>
 
