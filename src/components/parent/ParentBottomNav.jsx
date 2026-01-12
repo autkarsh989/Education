@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Mic, User, FileText } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useParent } from "../../contexts/ParentContext";
-import { generateParentReport } from "../../utils/parentApi";
+import { generateParentReport, fetchParentStats } from "../../utils/parentApi";
 import { useState } from "react";
 import ReportNotification from "./ReportNotification";
 
@@ -10,7 +10,7 @@ export default function ParentBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { lang } = useLanguage();
-  const { parent } = useParent();
+  const { parent, stats } = useParent();
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [notification, setNotification] = useState(null);
 
@@ -52,22 +52,48 @@ export default function ParentBottomNav() {
         return;
       }
 
-      await generateParentReport(token);
+      // Get latest stats if not available
+      let reportData;
+      if (stats && stats.child) {
+        reportData = {
+          child: stats.child,
+          comparison: stats.comparison
+        };
+      } else {
+        const statsData = await fetchParentStats(token);
+        reportData = {
+          child: statsData.child,
+          comparison: statsData.comparison
+        };
+      }
+
+      // Generate and download PDF
+      const pdfBlob = await generateParentReport(token, reportData);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `report_${reportData.child.name || reportData.child.username}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       // Show success notification
       setNotification({
         type: 'success',
         message: lang === "hi" 
-          ? "रिपोर्ट सफलतापूर्वक भेजी गई! कृपया अपना ईमेल चेक करें।" 
-          : "Report sent successfully! Please check your email."
+          ? "रिपोर्ट सफलतापूर्वक डाउनलोड हुई!" 
+          : "Report downloaded successfully!"
       });
     } catch (error) {
       console.error("Error generating report:", error);
       setNotification({
         type: 'error',
         message: lang === "hi" 
-          ? "रिपोर्ट भेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।" 
-          : "Error sending report. Please try again."
+          ? "रिपोर्ट जेनरेट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।" 
+          : "Error generating report. Please try again."
       });
     } finally {
       setIsGeneratingReport(false);

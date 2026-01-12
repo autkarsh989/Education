@@ -386,13 +386,17 @@ def check_message_instant(
             logger.debug(f"Judge output: {judge}")
 
             if isinstance(judge, dict):
-                if judge.get("final"):
+                is_final = judge.get("final", False)
+                logger.info(f"🔍 Answer Check for user {user_id}: final={is_final}, judge={judge}")
+                
+                if is_final:
                     # Use atomic UPDATEs to avoid race conditions and ensure counters increment correctly.
                     try:
                         is_correct = bool(judge.get("correct"))
+                        logger.info(f"✅ FINAL ANSWER for user {user_id}: correct={is_correct}")
 
                         if is_correct:
-                            logger.info(f"Correct answer detected for user {user_id} (atomic update)")
+                            logger.info(f"✓ Correct answer detected for user {user_id} (atomic update)")
                             db.query(User).filter(User.id == user_id).update(
                                 {
                                     User.total_attempts: (User.total_attempts + 1),
@@ -402,7 +406,7 @@ def check_message_instant(
                                 synchronize_session=False,
                             )
                         else:
-                            logger.info(f"Incorrect answer detected for user {user_id} (atomic update)")
+                            logger.info(f"✗ Incorrect answer detected for user {user_id} (atomic update)")
                             db.query(User).filter(User.id == user_id).update(
                                 {
                                     User.total_attempts: (User.total_attempts + 1),
@@ -417,6 +421,19 @@ def check_message_instant(
                         # Clamp negative score to 0.0 if it happened
                         try:
                             u_after = db.query(User).filter(User.id == user_id).first()
+
+                            # Level-up when score crosses threshold
+                            if is_correct and u_after and (u_after.score or 0.0) > 50.0:
+                                db.query(User).filter(User.id == user_id).update(
+                                    {
+                                        User.level: (User.level + 1),
+                                        User.score: 0.0,
+                                    },
+                                    synchronize_session=False,
+                                )
+                                db.commit()
+                                u_after = db.query(User).filter(User.id == user_id).first()
+
                             if u_after and (u_after.score or 0.0) < 0.0:
                                 db.query(User).filter(User.id == user_id).update({User.score: 0.0}, synchronize_session=False)
                                 db.commit()
@@ -467,7 +484,7 @@ def check_message_instant(
                         db.rollback()
                         logger.error(f"Failed to apply atomic user update for id={user_id}: {commit_err}")
                 else:
-                    logger.debug("Not a final answer yet")
+                    logger.info(f"⏳ Not a final answer yet for user {user_id} - awaiting final submission")
 
         except Exception as e:
             logger.warning(f"Answer-check skipped due to error: {e}")

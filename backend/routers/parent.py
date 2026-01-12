@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 import logging
 from models.schemas import (
@@ -273,136 +274,173 @@ def generate_child_report_pdf(payload: ParentReportRequest, username: str = Depe
 
     Returns an application/pdf response with a suggested filename.
     """
-    parent = db.query(Parent).filter(Parent.username == username).first()
-    if not parent:
-        raise HTTPException(status_code=403, detail="Parent not found or not authenticated as parent")
-
-    # Get report text via LLM
     try:
-        report_text = generate_parent_report(
-            child=dict(payload.child),
-            comparison=dict(payload.comparison) if payload.comparison is not None else None,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+        logger.info(f"=== Starting PDF report generation ===")
+        parent = db.query(Parent).filter(Parent.username == username).first()
+        if not parent:
+            logger.error(f"Parent not found: {username}")
+            raise HTTPException(status_code=403, detail="Parent not found or not authenticated as parent")
 
-    # Render PDF in-memory with styled layout
-    buffer = BytesIO()
-    name = payload.child.name or payload.child.username
-    cls = payload.child.class_level or payload.child.level
+        logger.info(f"Parent found: {parent.username}")
+        logger.info(f"Payload child: {payload.child}")
+        logger.info(f"Payload comparison: {payload.comparison}")
 
-    doc = SimpleDocTemplate(buffer, pagesize=LETTER, rightMargin=48, leftMargin=48, topMargin=48, bottomMargin=48)
-    styles = getSampleStyleSheet()
-    # Custom styles
-    title_style = ParagraphStyle(
-        "TitleStyle",
-        parent=styles["Title"],
-        fontName="Helvetica-Bold",
-        fontSize=22,
-        textColor=colors.HexColor("#1F4AB8"),
-        spaceAfter=12,
-    )
-    subtitle_style = ParagraphStyle(
-        "SubtitleStyle",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=12,
-        textColor=colors.HexColor("#555555"),
-        spaceAfter=16,
-    )
-    body_style = ParagraphStyle(
-        "BodyStyle",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=11,
-        leading=15,
-        textColor=colors.HexColor("#222222"),
-    )
+        # Get report text via LLM
+        try:
+            logger.info("Starting LLM report generation...")
+            report_text = generate_parent_report(
+                child=dict(payload.child),
+                comparison=dict(payload.comparison) if payload.comparison is not None else None,
+            )
+            logger.info(f"LLM report generated: {report_text[:100]}...")
+        except Exception as e:
+            logger.error(f"LLM error: {str(e)}", exc_info=True)
+            # Fallback: Generate a basic report if LLM fails
+            logger.info("Using fallback report due to LLM error")
+            child = payload.child
+            accuracy_pct = (child.accuracy * 100) if child.accuracy else 0
+            report_text = f"Your child {child.name or child.username} is making progress in math! " \
+                         f"Current score: {child.score:.1f}, Accuracy: {accuracy_pct:.1f}%. " \
+                         f"Keep encouraging regular practice and celebrate every achievement!"
 
-    elements = []
+        # Render PDF in-memory with styled layout
+        buffer = BytesIO()
+        name = payload.child.name or payload.child.username
+        cls = payload.child.class_level or payload.child.level
 
-    # Header block with accent bar
-    elements.append(Paragraph("Child Progress Report", title_style))
-    elements.append(Paragraph(f"Student: <b>{name}</b> &nbsp;&nbsp;|&nbsp;&nbsp; Class: <b>{cls}</b>", subtitle_style))
-
-    # Accent divider
-    accent_table = Table([['']], colWidths=[doc.width])
-    accent_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#1F4AB8')),
-        ('LINEBELOW', (0,0), (-1,-1), 0, colors.white),
-        ('LEFTPADDING', (0,0), (-1,-1), 0),
-        ('RIGHTPADDING', (0,0), (-1,-1), 0),
-        ('TOPPADDING', (0,0), (-1,-1), 1),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 1),
-    ]))
-    elements.append(accent_table)
-    elements.append(Spacer(1, 12))
-
-    # Report text block
-    elements.append(Paragraph(report_text.replace('\n', '<br/>'), body_style))
-    elements.append(Spacer(1, 16))
-
-    # Stats card grid
-    stats_data = [
-        ["Score", f"{payload.child.score:.2f}", "Accuracy", f"{payload.child.accuracy:.2f}"],
-        ["Attempts", f"{payload.child.total_attempts}", "Correct", f"{payload.child.correct_attempts}"],
-        ["Current Streak", f"{payload.child.current_streak}", "Max Streak", f"{payload.child.max_streak}"],
-    ]
-    stats_table = Table(stats_data, colWidths=[doc.width/4.0]*4)
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F0F5FF')),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor('#1A1A1A')),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 10),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#D9E2FF')),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D9E2FF')),
-        ('BACKGROUND', (0,1), (-1,-1), colors.white),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#FAFBFF')]),
-    ]))
-    elements.append(stats_table)
-
-    # Optional comparison section
-    if payload.comparison is not None:
-        elements.append(Spacer(1, 18))
-        elements.append(Paragraph("Class Comparison", ParagraphStyle(
-            "CompTitle",
-            parent=styles["Heading3"],
+        logger.info(f"Building PDF for student: {name}, class: {cls}")
+        
+        doc = SimpleDocTemplate(buffer, pagesize=LETTER, rightMargin=48, leftMargin=48, topMargin=48, bottomMargin=48)
+        styles = getSampleStyleSheet()
+        # Custom styles
+        title_style = ParagraphStyle(
+            "TitleStyle",
+            parent=styles["Title"],
             fontName="Helvetica-Bold",
-            fontSize=13,
+            fontSize=22,
             textColor=colors.HexColor("#1F4AB8"),
-        )))
+            spaceAfter=12,
+        )
+        subtitle_style = ParagraphStyle(
+            "SubtitleStyle",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            textColor=colors.HexColor("#555555"),
+            spaceAfter=16,
+        )
+        body_style = ParagraphStyle(
+            "BodyStyle",
+            parent=styles["BodyText"],
+            fontName="Helvetica",
+            fontSize=11,
+            leading=15,
+            textColor=colors.HexColor("#222222"),
+        )
 
-        comp = payload.comparison
-        comp_data = [
-            ["Class Count", str(comp.class_count), "Avg Score", f"{comp.avg_score:.2f}"],
-            ["Avg Accuracy", f"{comp.avg_accuracy:.2f}", "Top Score", f"{comp.top_score:.2f}"],
-            ["Rank", str(comp.rank), "Percentile", f"{comp.percentile:.2f}"],
+        elements = []
+
+        # Header block with accent bar
+        elements.append(Paragraph("Child Progress Report", title_style))
+        elements.append(Paragraph(f"Student: <b>{name}</b> &nbsp;&nbsp;|&nbsp;&nbsp; Class: <b>{cls}</b>", subtitle_style))
+
+        # Accent divider
+        accent_table = Table([['']], colWidths=[doc.width])
+        accent_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#1F4AB8')),
+            ('LINEBELOW', (0,0), (-1,-1), 0, colors.white),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 0),
+            ('TOPPADDING', (0,0), (-1,-1), 1),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 1),
+        ]))
+        elements.append(accent_table)
+        elements.append(Spacer(1, 12))
+
+        # Report text block
+        elements.append(Paragraph(report_text.replace('\n', '<br/>'), body_style))
+        elements.append(Spacer(1, 16))
+
+        # Stats card grid
+        stats_data = [
+            ["Score", f"{payload.child.score:.2f}", "Accuracy", f"{payload.child.accuracy:.2f}"],
+            ["Attempts", f"{payload.child.total_attempts}", "Correct", f"{payload.child.correct_attempts}"],
+            ["Current Streak", f"{payload.child.current_streak}", "Max Streak", f"{payload.child.max_streak}"],
         ]
-        comp_table = Table(comp_data, colWidths=[doc.width/4.0]*4)
-        comp_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#FFF5E6')),
-            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#FFE0B2')),
-            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#FFE0B2')),
+        stats_table = Table(stats_data, colWidths=[doc.width/4.0]*4)
+        stats_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#F0F5FF')),
+            ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor('#1A1A1A')),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#D9E2FF')),
+            ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#D9E2FF')),
+            ('BACKGROUND', (0,1), (-1,-1), colors.white),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#FAFBFF')]),
         ]))
-        elements.append(comp_table)
+        elements.append(stats_table)
 
-    # Footer note
-    elements.append(Spacer(1, 20))
-    elements.append(Paragraph(
-        "This report is auto-generated to support learning. For detailed feedback, connect with your child on recent topics.",
-        ParagraphStyle("Footer", parent=styles["BodyText"], fontSize=9, textColor=colors.HexColor('#666666'))
-    ))
+        # Optional comparison section
+        if payload.comparison is not None:
+            elements.append(Spacer(1, 18))
+            elements.append(Paragraph("Class Comparison", ParagraphStyle(
+                "CompTitle",
+                parent=styles["Heading3"],
+                fontName="Helvetica-Bold",
+                fontSize=13,
+                textColor=colors.HexColor("#1F4AB8"),
+            )))
 
-    doc.build(elements)
-    buffer.seek(0)
+            comp = payload.comparison
+            comp_data = [
+                ["Class Count", str(comp.class_count), "Avg Score", f"{comp.avg_score:.2f}"],
+                ["Avg Accuracy", f"{comp.avg_accuracy:.2f}", "Top Score", f"{comp.top_score:.2f}"],
+                ["Rank", str(comp.rank), "Percentile", f"{comp.percentile:.2f}"],
+            ]
+            comp_table = Table(comp_data, colWidths=[doc.width/4.0]*4)
+            comp_table.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#FFF5E6')),
+                ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#FFE0B2')),
+                ('INNERGRID', (0,0), (-1,-1), 0.5, colors.HexColor('#FFE0B2')),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            elements.append(comp_table)
 
-    filename = f"report_{name}.pdf" if name else "report.pdf"
-    headers = {"Content-Disposition": f"attachment; filename=\"{filename}\""}
-    return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
+        # Footer note
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph(
+            "This report is auto-generated to support learning. For detailed feedback, connect with your child on recent topics.",
+            ParagraphStyle("Footer", parent=styles["BodyText"], fontSize=9, textColor=colors.HexColor('#666666'))
+        ))
+
+        try:
+            logger.info("Building PDF document...")
+            doc.build(elements)
+            logger.info("PDF document built successfully")
+        except Exception as e:
+            logger.error(f"PDF build error: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"PDF generation error: {str(e)}")
+        
+        buffer.seek(0)
+        pdf_data = buffer.getvalue()
+
+        filename = f"report_{name}.pdf" if name else "report.pdf"
+        headers = {"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        logger.info(f"Returning PDF: {filename}, size: {len(pdf_data)} bytes")
+        
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers=headers
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in PDF generation: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.post("/report/email")

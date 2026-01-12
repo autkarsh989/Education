@@ -7,7 +7,8 @@ from litellm import completion
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-MODEL_NAME = "gemini/gemini-2.5-flash"  # format for LiteLLM Gemini
+# Use gemini-2.0-flash (free tier available) instead of gemma-3-12b which doesn't exist via Gemini API
+MODEL_NAME = "gemini/gemini-2.5-flash-lite"  # format for LiteLLM Gemini
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 

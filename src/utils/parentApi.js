@@ -204,12 +204,15 @@ export function clearParentToken() {
 }
 
 /**
- * Generate and send email report to parent
+ * Generate and download parent report PDF
  * @param {string} token - JWT authentication token
- * @returns {Promise<Object>} Report generation confirmation response
+ * @param {Object} reportData - Report data with child stats and optional comparison
+ * @param {Object} reportData.child - Child stats object
+ * @param {Object} reportData.comparison - Optional comparison data
+ * @returns {Promise<Blob>} PDF file blob
  * @throws {Error} If report generation fails
  */
-export async function generateParentReport(token) {
+export async function generateParentReport(token, reportData) {
   // Check network connectivity
   if (!isOnline()) {
     const error = await parseError(null, new Error('No internet connection'));
@@ -218,12 +221,13 @@ export async function generateParentReport(token) {
   }
 
   try {
-    const res = await fetch(`${API_URL}/parent/generate`, {
+    const res = await fetch(`${API_URL}/parents/report/pdf`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
       },
+      body: JSON.stringify(reportData),
     });
 
     if (!res.ok) {
@@ -235,7 +239,8 @@ export async function generateParentReport(token) {
       throw error;
     }
 
-    return await res.json();
+    // Return the PDF blob for downloading
+    return await res.blob();
   } catch (error) {
     // If error is already parsed, re-throw it
     if (error.type) {
