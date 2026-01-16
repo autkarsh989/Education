@@ -18,7 +18,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.username == user.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
-
+    print(User.password)
     new_user = User(
         username=user.username,
         password=hash_password(user.password),  # Hash password for security
@@ -30,7 +30,7 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         age=user.age,
         school=user.school,
     )
-
+    print(new_user.password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
