@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, field_validator, Field
+from pydantic import BaseModel, field_validator, Field
 from typing import List, Optional
 import re
+
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_-]+$")
@@ -25,7 +26,7 @@ class UserBase(BaseModel):
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', v):
                 raise ValueError('Invalid email format')
         return v
-    
+
     @field_validator('class_level')
     @classmethod
     def validate_class_level(cls, v):
@@ -38,12 +39,15 @@ class UserBase(BaseModel):
     class Config:
         from_attributes = True  # Updated from orm_mode for Pydantic V2
 
+
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6, max_length=100)
+
 
 class UserLogin(BaseModel):
     username: str
     password: str
+
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -55,8 +59,10 @@ class UserUpdate(BaseModel):
     age: Optional[int] = None
     school: Optional[str] = None
 
+
 class UserOut(UserBase):
     id: int
+
 
 # ---------- Chat / Messages ----------
 class Message(BaseModel):
@@ -64,14 +70,16 @@ class Message(BaseModel):
     image: Optional[str] = None
     sender: str
     session_id: Optional[str] = None
-    user_id: Optional[int] = None  # <-- new
+    user_id: Optional[int] = None
     time_taken: Optional[float] = 0.0
+
 
 class Chat(BaseModel):
     id: int
     title: str
-    session_id: Optional[str] = None  # add session_id here
+    session_id: Optional[str] = None
     messages: List[Message]
+
 
 # ---------- Explore ----------
 class Progress(BaseModel):
@@ -161,11 +169,12 @@ class ParentStatsOut(BaseModel):
     child: ChildStats
     comparison: Comparison
 
+
 # ---------- Parent Report Schemas ----------
 class ParentReportRequest(BaseModel):
     child: ChildStats
-    # Optional: include comparison to enrich report if available
     comparison: Optional[Comparison] = None
+
 
 class ParentReportOut(BaseModel):
     report: str
@@ -252,7 +261,7 @@ class TeacherStudentOut(BaseModel):
     student_username: str
     enrolled_date: str
     class_level: str
-    
+
     class Config:
         from_attributes = True
 
@@ -263,7 +272,7 @@ class StudentInfo(BaseModel):
     email: Optional[str] = None
     class_level: Optional[str] = None
     enrolled_date: str
-    
+
     class Config:
         from_attributes = True
 
