@@ -86,15 +86,19 @@ export function ParentProvider({ children }) {
   const fetchStats = async () => {
     const token = await getParentToken();
     if (!token) {
+      console.log('[ParentContext] No token found');
       return { success: false, message: 'Not authenticated' };
     }
 
     setStatsLoading(true);
     try {
+      console.log('[ParentContext] Fetching stats...');
       const statsData = await fetchParentStats(token);
+      console.log('[ParentContext] Stats received:', JSON.stringify(statsData, null, 2));
       setStats(statsData);
       return { success: true, data: statsData };
     } catch (err) {
+      console.error('[ParentContext] Error fetching stats:', err);
       if (err.message?.includes('Session expired') || err.message?.includes('401')) {
         await logout();
         return { success: false, message: 'Session expired. Please login again.', expired: true };

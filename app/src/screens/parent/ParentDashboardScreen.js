@@ -49,9 +49,9 @@ export default function ParentDashboardScreen() {
               {/* Child Info Card */}
               <View style={styles.card}>
                 <Text style={styles.cardTitle}>👧 Child's Progress</Text>
-                <Text style={styles.childName}>{stats.child?.name || 'Student'}</Text>
+                <Text style={styles.childName}>{stats.child?.name || stats.child?.username || 'Student'}</Text>
                 <Text style={styles.childInfo}>
-                  {stats.child?.class_level} · Level {stats.child?.level}
+                  {stats.child?.class_level || `Level ${stats.child?.level || 1}`}
                 </Text>
               </View>
 
@@ -73,7 +73,7 @@ export default function ParentDashboardScreen() {
                   <Text style={styles.statLabel}>Day Streak 🔥</Text>
                 </View>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{stats.child?.score?.toFixed(1) || 0}</Text>
+                  <Text style={styles.statValue}>{typeof stats.child?.score === 'number' ? stats.child.score.toFixed(1) : '0.0'}</Text>
                   <Text style={styles.statLabel}>Score</Text>
                 </View>
               </View>
@@ -83,10 +83,16 @@ export default function ParentDashboardScreen() {
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>📊 Class Comparison</Text>
                   <Text style={styles.activityText}>
-                    Rank: {stats.comparison.rank} of {stats.comparison.class_count} students
+                    Rank: {stats.comparison.rank || 'N/A'} of {stats.comparison.class_count || 0} students
                   </Text>
                   <Text style={styles.activityText}>
-                    Percentile: {stats.comparison.percentile?.toFixed(1)}%
+                    Percentile: {typeof stats.comparison.percentile === 'number' ? stats.comparison.percentile.toFixed(1) : '0.0'}%
+                  </Text>
+                  <Text style={styles.activityText}>
+                    Class Average: {typeof stats.comparison.avg_score === 'number' ? stats.comparison.avg_score.toFixed(1) : '0.0'}
+                  </Text>
+                  <Text style={styles.activityText}>
+                    Top Score: {typeof stats.comparison.top_score === 'number' ? stats.comparison.top_score.toFixed(1) : '0.0'}
                   </Text>
                 </View>
               )}
