@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator, Field
-from typing import List, Optional
+from typing import List, Optional, Any
 import re
 
 
@@ -279,3 +279,74 @@ class StudentInfo(BaseModel):
 
 class TeacherWithStudents(TeacherOut):
     students: List[StudentInfo] = []
+
+
+# ---------- Contest Schemas ----------
+class ContestQuestionOut(BaseModel):
+    id: int
+    question: str
+    options: List[str]
+    subject: Optional[str] = None
+    explanation: Optional[str] = None
+
+
+class ContestQuestionSetOut(BaseModel):
+    contest_id: str
+    class_level: str
+    total_questions: int
+    questions: List[ContestQuestionOut]
+
+
+class ContestSubmitRequest(BaseModel):
+    contest_id: str
+    answers: dict[str, Any] = Field(default_factory=dict)
+    time_taken: Optional[float] = Field(None, ge=0)
+
+
+class ContestQuestionResult(BaseModel):
+    id: int
+    question: str
+    selected_answer: Optional[str] = None
+    correct_answer: str
+    is_correct: bool
+    explanation: Optional[str] = None
+
+
+class ContestLeaderboardEntry(BaseModel):
+    rank: int
+    username: str
+    name: Optional[str] = None
+    class_level: str
+    best_score: float
+    best_correct_count: int
+    attempts: int
+    last_attempt_at: Optional[str] = None
+
+
+class ContestLeaderboardOut(BaseModel):
+    class_level: str
+    total_students: int
+    student_username: str
+    student_rank: Optional[int] = None
+    top_score: float = 0.0
+    entries: List[ContestLeaderboardEntry]
+
+
+class ContestSubmitOut(BaseModel):
+    attempt_id: int
+    contest_id: str
+    class_level: str
+    username: str
+    score: float
+    correct_count: int
+    total_questions: int
+    accuracy: float
+    passed: bool
+    rank: int
+    leaderboard: List[ContestLeaderboardEntry]
+    question_results: List[ContestQuestionResult]
+    submitted_at: str
+
+
+class ContestResultOut(ContestSubmitOut):
+    pass

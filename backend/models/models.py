@@ -128,3 +128,22 @@ class Video(Base):
     # Metadata
     upload_date = Column(String, nullable=False)  # ISO format date
     view_count = Column(Integer, default=0)
+
+
+# ---------- Contest ----------
+class ContestAttempt(Base):
+    __tablename__ = "contest_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    contest_id = Column(String, index=True, nullable=False)
+    username = Column(String, ForeignKey("users.username"), index=True, nullable=False)
+    class_level = Column(String, index=True, nullable=False)
+
+    score = Column(Float, default=0.0)
+    correct_count = Column(Integer, default=0)
+    total_questions = Column(Integer, default=0)
+    time_taken = Column(Float, nullable=True)
+    answers_json = Column(Text, nullable=False)
+    submitted_at = Column(String, nullable=False)
+
+    student = relationship("User", foreign_keys=[username])

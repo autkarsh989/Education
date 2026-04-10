@@ -30,6 +30,8 @@ const FindTeachers = lazy(() => import("./pages/student/FindTeachers"));
 const TeacherVideos = lazy(() => import("./pages/student/TeacherVideos"));
 const VideoPlayer = lazy(() => import("./pages/student/VideoPlayer"));
 const MyTeachers = lazy(() => import("./pages/student/MyTeachers"));
+const ContestArena = lazy(() => import("./pages/student/ContestArena"));
+const ContestResult = lazy(() => import("./pages/student/ContestResult"));
 
 // Loading component for lazy-loaded routes
 function LoadingSpinner() {
@@ -258,6 +260,26 @@ export default function App() {
             element={
               <Suspense fallback={<LoadingSpinner />}>
                 <MyTeachers />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contest"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <MainLayout>
+                  {(props) => <ContestArena {...props} />}
+                </MainLayout>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/contest/result/:attemptId"
+            element={
+              <Suspense fallback={<LoadingSpinner />}>
+                <MainLayout>
+                  {(props) => <ContestResult {...props} />}
+                </MainLayout>
               </Suspense>
             }
           />
