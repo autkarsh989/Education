@@ -34,7 +34,7 @@ export default function ContestResult() {
 
   const loadResult = async ({ silent = false } = {}) => {
     if (!attemptId) {
-      setError("Invalid contest attempt id");
+      setError("Invalid test attempt id");
       setLoading(false);
       return;
     }
@@ -46,7 +46,7 @@ export default function ContestResult() {
       const data = await getContestResult(attemptId);
       setResult(data);
     } catch (err) {
-      setError(err.message || "Unable to load contest result");
+      setError(err.message || "Unable to load test result");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -62,7 +62,7 @@ export default function ContestResult() {
       <div className="h-full flex items-center justify-center text-masterly-navy p-6">
         <div className="text-center space-y-3">
           <div className="mx-auto h-12 w-12 rounded-full border-4 border-masterly-orange border-t-transparent animate-spin" />
-          <p className="font-medium">Loading contest result...</p>
+          <p className="font-medium">Loading test result...</p>
         </div>
       </div>
     );
@@ -78,7 +78,7 @@ export default function ContestResult() {
               className="inline-flex items-center gap-2 text-sm font-semibold text-masterly-muted hover:text-masterly-navy transition-colors"
             >
               <ArrowLeft size={16} />
-              Back to Contest
+              Back to Test
             </button>
             <button
               onClick={() => {
@@ -207,7 +207,7 @@ export default function ContestResult() {
                 to="/contest"
                 className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all"
               >
-                Start New Contest
+                Start New Test
               </Link>
             </div>
           </>

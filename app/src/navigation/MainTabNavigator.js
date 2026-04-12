@@ -1,29 +1,39 @@
 // Main Tab Navigator with bottom tabs
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, MessageSquare, Compass, User } from 'lucide-react-native';
+import { Home, MessageSquare, Compass, User, Trophy } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ExploreScreen from '../screens/ExploreScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import TestPortalScreen from '../screens/TestPortalScreen';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 import colors from '../styles/colors';
+import { getContestLeaderboard } from '../utils/contestApi';
 
 const Tab = createBottomTabNavigator();
 
-function TabBarIcon({ focused, icon: Icon, label }) {
+function TabBarIcon({ focused, icon: Icon, label, badgeText }) {
   return (
     <View style={styles.tabItem}>
       {focused && (
         <View style={styles.activeIndicator} />
       )}
-      <Icon 
-        size={24} 
-        color={focused ? colors.primary.cyan : 'rgba(255,255,255,0.7)'} 
-      />
+      <View style={styles.iconWrapper}>
+        <Icon 
+          size={24} 
+          color={focused ? colors.primary.cyan : 'rgba(255,255,255,0.7)'} 
+        />
+        {badgeText ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badgeText}</Text>
+          </View>
+        ) : null}
+      </View>
       <Text style={[
         styles.tabLabel,
         { color: focused ? colors.primary.cyan : 'rgba(255,255,255,0.7)' }
@@ -36,6 +46,35 @@ function TabBarIcon({ focused, icon: Icon, label }) {
 
 export default function MainTabNavigator() {
   const { lang } = useLanguage();
+  const { user, loading: userLoading } = useUser();
+  const [contestRank, setContestRank] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRank = async () => {
+      if (userLoading) return;
+      if (!user) {
+        if (isMounted) setContestRank(null);
+        return;
+      }
+
+      try {
+        const data = await getContestLeaderboard();
+        if (isMounted) {
+          setContestRank(typeof data?.student_rank === 'number' ? data.student_rank : null);
+        }
+      } catch (error) {
+        if (isMounted) setContestRank(null);
+      }
+    };
+
+    loadRank();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, userLoading]);
 
   return (
     <Tab.Navigator
@@ -85,6 +124,20 @@ export default function MainTabNavigator() {
         }}
       />
       <Tab.Screen 
+        name="TestPortal" 
+        component={TestPortalScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon 
+              focused={focused} 
+              icon={Trophy} 
+              label={lang === 'hi' ? 'टेस्ट' : 'Test'}
+              badgeText={contestRank ? `#${contestRank}` : null}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen 
         name="Profile" 
         component={ProfileScreen}
         options={{
@@ -118,6 +171,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 4,
+  },
+  iconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -8,
+    right: -14,
+    backgroundColor: '#F97316',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
   tabLabel: {
     fontSize: 11,

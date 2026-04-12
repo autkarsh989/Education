@@ -173,7 +173,7 @@ export default function ContestArena() {
       <div className="h-full flex items-center justify-center text-masterly-navy p-6">
         <div className="text-center space-y-3">
           <div className="mx-auto h-12 w-12 rounded-full border-4 border-masterly-orange border-t-transparent animate-spin" />
-          <p className="font-medium">Loading contest arena...</p>
+          <p className="font-medium">Loading test portal...</p>
         </div>
       </div>
     );
@@ -187,7 +187,7 @@ export default function ContestArena() {
             <Trophy size={30} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-masterly-navy">Contest Arena</h1>
+            <h1 className="text-2xl font-bold text-masterly-navy">Test Portal</h1>
             <p className="text-sm text-masterly-muted mt-2">
               Sign in to get your class quiz, submit answers, and see the leaderboard.
             </p>
@@ -205,6 +205,10 @@ export default function ContestArena() {
 
   const questions = contest?.questions || [];
   const score = result?.score ?? 0;
+  const rankValue = typeof leaderboard?.student_rank === "number" ? leaderboard.student_rank : null;
+  const rankLabel = rankValue ? `#${rankValue}` : "Unranked";
+  const totalStudents = leaderboard?.total_students ?? 0;
+  const topScore = leaderboard?.top_score ?? 0;
 
   return (
     <div className="relative h-full px-3 pb-4 pt-2 text-masterly-navy overflow-y-auto smooth-scroll">
@@ -235,8 +239,8 @@ export default function ContestArena() {
               <Trophy size={18} />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold tracking-tight text-[#7F3100]">Contest Arena</h1>
-              <p className="text-xs font-medium text-[#A65A24]">Quick-fire class challenge with live leaderboard</p>
+              <h1 className="text-xl font-extrabold tracking-tight text-[#7F3100]">Test Portal</h1>
+              <p className="text-xs font-medium text-[#A65A24]">Class test with live leaderboard updates</p>
             </div>
           </div>
 
@@ -276,6 +280,32 @@ export default function ContestArena() {
 
         {!isContestStarted && !result ? (
           <div className="space-y-4">
+            <div className="rounded-[28px] border border-masterly-border bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-[#FFE8D8] flex items-center justify-center text-masterly-orange">
+                  <Medal size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-masterly-navy">My Rank</h3>
+                  <p className="text-xs text-masterly-muted">Latest class ranking snapshot</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-2xl border border-masterly-border bg-[#FFF8F2] p-3">
+                  <p className="text-xs text-masterly-muted">Current Rank</p>
+                  <p className="text-2xl font-bold text-masterly-navy">{rankLabel}</p>
+                </div>
+                <div className="rounded-2xl border border-masterly-border bg-[#FFF8F2] p-3">
+                  <p className="text-xs text-masterly-muted">Class Size</p>
+                  <p className="text-2xl font-bold text-masterly-navy">{totalStudents}</p>
+                </div>
+                <div className="rounded-2xl border border-masterly-border bg-[#FFF8F2] p-3">
+                  <p className="text-xs text-masterly-muted">Top Score</p>
+                  <p className="text-2xl font-bold text-masterly-navy">{topScore}%</p>
+                </div>
+              </div>
+            </div>
+
             {/* LEADERBOARD SECTION - NOW AT TOP */}
             <div className="rounded-[28px] border border-masterly-border overflow-hidden shadow-sm">
               <div className="bg-gradient-to-r from-masterly-orange/10 to-orange-300/10 border-b border-masterly-border px-5 py-4">
@@ -430,7 +460,7 @@ export default function ContestArena() {
                   className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#ff7f2a] to-[#ef5f00] px-6 py-4 text-base font-bold text-white shadow-lg shadow-orange-300/40 disabled:opacity-60 hover:shadow-orange-400/50 active:scale-[0.98] transition-all duration-200"
                 >
                   <Sparkles size={20} />
-                  {loading ? "Starting..." : "🚀 Start Contest"}
+                  {loading ? "Starting..." : "Start Test"}
                 </button>
               </div>
             </div>
@@ -598,7 +628,7 @@ export default function ContestArena() {
 
           <div className="space-y-4">
             <div className="bg-masterly-cardSoft rounded-[28px] border border-masterly-border p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-masterly-navy mb-3">Contest Tips</h3>
+              <h3 className="text-lg font-semibold text-masterly-navy mb-3">Test Tips</h3>
               <div className="space-y-3 text-sm text-masterly-muted">
                 <div className="rounded-2xl bg-white border border-masterly-border px-4 py-3">
                   Answer every question before submitting for the best score.
@@ -621,7 +651,7 @@ export default function ContestArena() {
                     className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 rounded-full border border-masterly-border bg-white px-4 py-3 text-sm font-semibold text-masterly-navy hover:bg-[#FFF8F2] disabled:opacity-60 transition-colors"
                   >
                     <RefreshCcw size={16} className={refreshing ? "animate-spin" : ""} />
-                    New Contest
+                    New Test
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -646,7 +676,7 @@ export default function ContestArena() {
                     className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-60 transition-all"
                   >
                     <RefreshCcw size={16} className={refreshing ? "animate-spin" : ""} />
-                    Try a New Contest
+                    Try a New Test
                   </button>
                 </>
               )}

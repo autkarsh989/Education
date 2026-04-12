@@ -3,13 +3,17 @@ import { Home, Compass, User, MessageSquare, Trophy } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { resetSession } from "../utils/api"; // <-- import here
 import { useState, useEffect } from "react";
+import { useUser } from "../contexts/UserContext";
+import { getContestLeaderboard } from "../utils/contestApi";
 
 export default function BottomNav({ setIsChatExpanded }) {
   const { lang } = useLanguage();
+  const { user, loading: userLoading } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [clickedIndex, setClickedIndex] = useState(null);
   const [showExploreHint, setShowExploreHint] = useState(false);
+  const [contestRank, setContestRank] = useState(null);
 
   // Show hint pulse for Explore feature (new feature hint)
   useEffect(() => {
@@ -18,6 +22,35 @@ export default function BottomNav({ setIsChatExpanded }) {
       setShowExploreHint(true);
     }
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadContestRank = async () => {
+      if (userLoading) return;
+      if (!user) {
+        if (isMounted) setContestRank(null);
+        return;
+      }
+
+      try {
+        const data = await getContestLeaderboard();
+        if (isMounted) {
+          setContestRank(
+            typeof data?.student_rank === "number" ? data.student_rank : null
+          );
+        }
+      } catch (error) {
+        if (isMounted) setContestRank(null);
+      }
+    };
+
+    loadContestRank();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, userLoading]);
 
   const handleExploreClick = (index) => {
     // Mark as seen and remove hint
@@ -67,10 +100,11 @@ export default function BottomNav({ setIsChatExpanded }) {
     },
     {
       icon: <Trophy size={24} />,
-      label: lang === "hi" ? "कॉन्टेस्ट" : "Contest",
+      label: lang === "hi" ? "टेस्ट" : "Test",
       path: "/contest",
       activePaths: ["/contest", "/contest/result"],
       action: (index) => handleNavigate("/contest", true, index),
+      showRank: true,
     },
     {
       icon: <User size={24} />,
@@ -88,6 +122,10 @@ export default function BottomNav({ setIsChatExpanded }) {
           if (path === "/") return location.pathname === "/";
           return location.pathname === path || location.pathname.startsWith(`${path}/`);
         });
+        const ariaLabel =
+          n.showRank && contestRank !== null
+            ? `${n.label} rank ${contestRank}`
+            : n.label;
         
         return (
           <button
@@ -101,7 +139,7 @@ export default function BottomNav({ setIsChatExpanded }) {
               active:scale-90
               ${clickedIndex === i ? 'animate-bounce' : ''}
             `}
-            aria-label={n.label}
+            aria-label={ariaLabel}
             aria-current={isActive ? 'page' : undefined}
           >
             {n.showHint && (
@@ -110,13 +148,18 @@ export default function BottomNav({ setIsChatExpanded }) {
 
             {/* Icon */}
             <div className={`
-              transition-all duration-200 rounded-full p-1.5
+              relative transition-all duration-200 rounded-full p-1.5
               ${isActive 
                 ? 'text-masterly-orange bg-white/15 shadow-inner shadow-white/10' 
                 : 'text-white/70 hover:text-white'
               }
             `}>
               {n.icon}
+              {n.showRank && contestRank !== null && (
+                <span className="absolute -top-1 -right-2 rounded-full bg-masterly-orange text-white text-[9px] font-bold px-1.5 py-0.5 shadow">
+                  #{contestRank}
+                </span>
+              )}
             </div>
             
             {/* Label with fade transition */}
