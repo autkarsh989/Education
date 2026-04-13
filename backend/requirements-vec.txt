@@ -1,0 +1,13 @@
+# Vector ingestion feature dependencies
+fastapi==0.115.0
+python-multipart==0.0.9
+
+# PDF extraction and chunking
+pypdf==4.3.1
+langchain-text-splitters==0.2.2
+
+# Embeddings and vector database
+langchain-community==0.2.16
+langchain-huggingface==0.0.3
+faiss-cpu==1.8.0.post1
+sentence-transformers==3.0.1
