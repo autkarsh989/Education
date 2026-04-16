@@ -22,6 +22,7 @@ from models.schemas import (
     ContestSubmitRequest,
     ContestLeaderboardOut,
 )
+import llm
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contest", tags=["contest"])
@@ -182,7 +183,32 @@ QUESTION_BUILDERS = {
 
 
 def get_question_set(class_level: str, contest_id: str, total_questions: int = QUESTIONS_PER_CONTEST) -> list[dict[str, Any]]:
+    """
+    Generate questions using LLM with fallback to hardcoded questions.
+    Prioritizes dynamic generation for better educational value.
+    """
     normalized_class = normalize_class_level(class_level) or "class_6"
+    
+    try:
+        # Try LLM-based generation first
+        llm_questions = llm.generate_contest_questions(normalized_class, total_questions, contest_id)
+        if llm_questions and len(llm_questions) > 0:
+            # Normalize LLM output format to match hardcoded format
+            normalized_questions = []
+            for q in llm_questions:
+                normalized_questions.append({
+                    "question": q.get("question", ""),
+                    "options": q.get("options", []),
+                    "answer": q.get("correct_answer", q.get("answer", "")),  # Handle both key formats
+                    "subject": q.get("subject", ""),
+                    "explanation": q.get("explanation", ""),
+                })
+            logger.info(f"Generated {len(normalized_questions)} questions via LLM for {normalized_class}")
+            return normalized_questions[: max(1, min(total_questions, len(normalized_questions)))]
+    except Exception as e:
+        logger.warning(f"LLM generation failed for {normalized_class}: {e}. Falling back to hardcoded questions.")
+    
+    # Fallback to hardcoded questions
     builder = QUESTION_BUILDERS.get(normalized_class, QUESTION_BUILDERS["class_6"])
     rng = random.Random(f"{normalized_class}:{contest_id}")
     questions = builder(rng)
@@ -220,7 +246,28 @@ def score_submission(submitted_answer: Any, question: dict[str, Any]) -> tuple[b
     return is_correct, selected_answer
 
 
-def build_question_results(questions: list[dict[str, Any]], answers: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+def normalize_submitted_answer(submitted_answer: Any, question: dict[str, Any]) -> str:
+    """Normalize submitted answer into option text when answer is an index."""
+    selected_answer = _clean_answer(submitted_answer)
+
+    if submitted_answer is None:
+        return selected_answer
+
+    if isinstance(submitted_answer, int):
+        options = question.get("options", [])
+        if 0 <= submitted_answer < len(options):
+            return _clean_answer(options[submitted_answer])
+
+    if selected_answer.isdigit() and selected_answer not in question.get("options", []):
+        index = int(selected_answer)
+        options = question.get("options", [])
+        if 0 <= index < len(options):
+            return _clean_answer(options[index])
+
+    return selected_answer
+
+
+def _build_question_results_local(questions: list[dict[str, Any]], answers: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
     results: list[dict[str, Any]] = []
     correct_count = 0
 
@@ -241,6 +288,58 @@ def build_question_results(questions: list[dict[str, Any]], answers: dict[str, A
         )
 
     return results, correct_count
+
+
+def build_question_results(
+    class_level: str,
+    questions: list[dict[str, Any]],
+    answers: dict[str, Any],
+) -> tuple[list[dict[str, Any]], int]:
+    """Evaluate answers in a single LLM call, with local fallback for reliability."""
+    submitted_rows: list[dict[str, Any]] = []
+    for index, question in enumerate(questions, start=1):
+        raw_answer = answers.get(str(index))
+        submitted_rows.append(
+            {
+                "id": index,
+                "selected_answer": normalize_submitted_answer(raw_answer, question),
+            }
+        )
+
+    llm_eval = llm.evaluate_contest_answers(class_level, questions, submitted_rows)
+    llm_results = llm_eval.get("question_results", []) if isinstance(llm_eval, dict) else []
+
+    if llm_results and len(llm_results) == len(questions):
+        enriched_results: list[dict[str, Any]] = []
+        valid_correct = 0
+
+        for index, question in enumerate(questions, start=1):
+            row = next((r for r in llm_results if int(r.get("id", 0)) == index), None)
+            if not row:
+                return _build_question_results_local(questions, answers)
+
+            selected_answer = _clean_answer(row.get("selected_answer"))
+            correct_answer = _clean_answer(question["answer"])
+            # Keep scoring deterministic even when LLM labels differ.
+            is_correct = selected_answer.strip().lower() == correct_answer.strip().lower()
+
+            if is_correct:
+                valid_correct += 1
+
+            enriched_results.append(
+                {
+                    "id": index,
+                    "question": question["question"],
+                    "selected_answer": selected_answer or None,
+                    "correct_answer": correct_answer,
+                    "is_correct": is_correct,
+                    "explanation": question.get("explanation"),
+                }
+            )
+
+        return enriched_results, valid_correct
+
+    return _build_question_results_local(questions, answers)
 
 
 def leaderboard_rows(db: Session, class_level: str) -> list[dict[str, Any]]:
@@ -359,11 +458,17 @@ def submit_contest_answers(
         raise HTTPException(status_code=400, detail="Student class level is required for contest scoring")
 
     questions = get_question_set(class_level, payload.contest_id)
-    question_results, correct_count = build_question_results(questions, payload.answers)
+    question_results, correct_count = build_question_results(class_level, questions, payload.answers)
     total_questions = len(questions)
     score = round((correct_count / total_questions) * 100, 2) if total_questions else 0.0
     accuracy = score
     submitted_at = datetime.utcnow().isoformat()
+
+    attempt_payload = {
+        "answers": payload.answers,
+        "questions": questions,
+        "question_results": question_results,
+    }
 
     attempt = ContestAttempt(
         contest_id=payload.contest_id,
@@ -373,7 +478,7 @@ def submit_contest_answers(
         correct_count=correct_count,
         total_questions=total_questions,
         time_taken=payload.time_taken,
-        answers_json=json.dumps(payload.answers),
+        answers_json=json.dumps(attempt_payload),
         submitted_at=submitted_at,
     )
     db.add(attempt)
@@ -414,9 +519,23 @@ def get_contest_result(
     if not attempt:
         raise HTTPException(status_code=404, detail="Contest attempt not found")
 
-    answers = json.loads(attempt.answers_json or "{}")
-    questions = get_question_set(attempt.class_level, attempt.contest_id, attempt.total_questions)
-    question_results, _ = build_question_results(questions, answers)
+    stored_payload = json.loads(attempt.answers_json or "{}")
+    if isinstance(stored_payload, dict) and "answers" in stored_payload:
+        answers = stored_payload.get("answers", {})
+        questions = stored_payload.get("questions", [])
+        question_results = stored_payload.get("question_results", [])
+    else:
+        # Backward compatibility for older attempts storing only raw answers map.
+        answers = stored_payload if isinstance(stored_payload, dict) else {}
+        questions = []
+        question_results = []
+
+    if not questions:
+        questions = get_question_set(attempt.class_level, attempt.contest_id, attempt.total_questions)
+
+    if not question_results:
+        question_results, _ = build_question_results(attempt.class_level, questions, answers)
+
     leaderboard = leaderboard_payload(db, attempt.class_level, username)
 
     return {

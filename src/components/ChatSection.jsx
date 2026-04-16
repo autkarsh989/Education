@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Image } from "lucide-react";
-import { sendToGemini, setSessionId ,sendCheckRequest} from "../utils/api";
+import { Image, Plus } from "lucide-react";
+import { sendToGemini, setSessionId, getSessionId, sendCheckRequest, setSubject } from "../utils/api";
 import { useLanguage } from "../hooks/useLanguage";
 import { useHistoryStore } from "../hooks/useHistory";
 import { useUser } from "../contexts/UserContext";
@@ -13,16 +13,18 @@ export default function ChatSection({
   setLoading,
   loadMessages,
   preloadSessionId = null,
-  initialTopic, // 👈 new prop
 }) {
   const { lang } = useLanguage();
   const { addConversation } = useHistoryStore();
   const { user } = useUser();
 
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
   // Teacher expression logic based on message content
   const getTeacherExpression = (text) => {
     if (!text) return "neutral";
-    // Ensure text is a string (handle cases where it might be an object)
     const textStr = typeof text === "string" ? text : String(text || "");
     if (!textStr) return "neutral";
     const lowerText = textStr.toLowerCase();
@@ -118,8 +120,8 @@ export default function ChatSection({
       {
         text:
           lang === "hi"
-            ? "नमस्ते! मैं आपके गणित के सवालों की मदद कर सकता हूँ।"
-            : "hey! how can i help you",
+            ? "नमस्ते! कृपया शुरू करने के लिए एक विषय चुनें।"
+            : "Hello! Please select a subject to begin.",
         sender: "bot",
       },
     ]
@@ -132,6 +134,33 @@ export default function ChatSection({
   const timerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Fetch available subjects on mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        setLoadingSubjects(true);
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/topics/subjects`,
+          {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (response.ok) {
+          const subjects = await response.json();
+          setAvailableSubjects(subjects);
+        }
+      } catch (error) {
+        console.error("Failed to fetch subjects:", error);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
+
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
 
   useEffect(() => {
@@ -139,7 +168,7 @@ export default function ChatSection({
     return () => clearInterval(timerRef.current);
   }, []);
 
-  // If Home passes a preloadSessionId (from history click), set it so subsequent sends use it
+  // Restore session if provided
   useEffect(() => {
     if (preloadSessionId) {
       try {
@@ -164,18 +193,33 @@ export default function ChatSection({
     startTimer();
   };
 
-  // 👇 Auto-start chat when user clicks a topic
-  useEffect(() => {
-    if (initialTopic) {
-      const topicMessage = {
-        text: lang === "hi"
-          ? `${initialTopic} पर बात शुरू करें।`
-          : `Let's start learning about ${initialTopic}.`,
-        sender: "user",
-      };
-      handleSend(topicMessage.text);
-    }
-  }, [initialTopic,lang]);
+  const handleSelectSubject = (subject) => {
+    setSelectedSubject(subject);
+    setSubject(subject);
+    
+    // Add system message about subject selection
+    const subjectMessage = {
+      text:
+        lang === "hi"
+          ? `✅ ${subject} के लिए समर्थन सक्रिय है। आप अब प्रश्न पूछ सकते हैं।`
+          : `✅ Support for ${subject} is now active. You can start asking questions.`,
+      sender: "bot",
+    };
+    setMessages((prev) => [...prev, subjectMessage]);
+  };
+
+  const handleNewChat = () => {
+    setSelectedSubject(null);
+    setMessages([
+      {
+        text:
+          lang === "hi"
+            ? "नमस्ते! कृपया शुरू करने के लिए एक विषय चुनें।"
+            : "Hello! Please select a subject to begin.",
+        sender: "bot",
+      },
+    ]);
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -187,47 +231,61 @@ export default function ChatSection({
     };
     reader.readAsDataURL(file);
   };
+
   const handleCheck = async () => {
-  const userMessage = input.trim();
-  if (!userMessage || loading) return;
+    const userMessage = input.trim();
+    if (!userMessage || loading || !selectedSubject) return;
 
-  const newUserMsg = { text: userMessage, sender: "user" };
-  setMessages((prev) => [...prev, newUserMsg]);
-  setInput("");
+    const newUserMsg = { text: userMessage, sender: "user" };
+    setMessages((prev) => [...prev, newUserMsg]);
+    setInput("");
 
-  try {
-    setLoading(true);
-    const response = await sendCheckRequest(
-      { text: userMessage, image: image || null, time_taken: timeTaken },
-      user.username
-    );
+    try {
+      setLoading(true);
+      const response = await sendCheckRequest(
+        { text: userMessage, image: image || null, time_taken: timeTaken },
+        user.username,
+        selectedSubject
+      );
 
-    const reply = response.bot_message || "No response received.";
-    // Ensure reply is a string (handle cases where bot_message might be an object)
-    const replyText = typeof reply === "string" ? reply : (reply?.text || String(reply));
+      const reply = response.bot_message || "No response received.";
+      const replyText = typeof reply === "string" ? reply : (reply?.text || String(reply));
 
-    setMessages((prev) => [...prev, { text: replyText, sender: "bot" }]);
-    addConversation([...messages, newUserMsg, { text: replyText, sender: "bot" }]);
+      setMessages((prev) => [...prev, { text: replyText, sender: "bot" }]);
+      addConversation([...messages, newUserMsg, { text: replyText, sender: "bot" }]);
 
-    resetTimer();
-  } catch (error) {
-    console.error(error);
-    setMessages((prev) => [
-      ...prev,
-      { text: "An error occurred while checking.", sender: "bot" },
-    ]);
-  } finally {
-    setLoading(false);
-    setImage(null);
-  }
-};
-
+      resetTimer();
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { text: lang === "hi" ? "त्रुटि हुई।" : "An error occurred.", sender: "bot" },
+      ]);
+    } finally {
+      setLoading(false);
+      setImage(null);
+    }
+  };
 
   const handleSend = async (forcedMessage = null) => {
     const userMessage = forcedMessage || input.trim();
+    
     if ((!userMessage && !image) || loading) return;
     if (!user?.username) {
       console.error("User not logged in");
+      return;
+    }
+    
+    // If no subject selected yet, show error
+    if (!selectedSubject) {
+      const errorMsg = {
+        text:
+          lang === "hi"
+            ? "कृपया पहले एक विषय चुनें।"
+            : "Please select a subject first.",
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
       return;
     }
 
@@ -239,7 +297,8 @@ export default function ChatSection({
       setLoading(true);
       const response = await sendToGemini(
         { text: userMessage, image: image || null, time_taken: timeTaken },
-        user.username
+        user.username,
+        selectedSubject
       );
 
       const reply =
@@ -249,7 +308,7 @@ export default function ChatSection({
       setMessages((prev) => [...prev, { text: reply, sender: "bot" }]);
       addConversation([...messages, newUserMsg, { text: reply, sender: "bot" }]);
 
-      // Trigger confetti and success animation for correct answers or celebrations
+      // Trigger confetti for celebratory messages
       const lowerReply = reply.toLowerCase();
       if (lowerReply.includes("correct") || lowerReply.includes("excellent") || 
           lowerReply.includes("perfect") || lowerReply.includes("great job") ||
@@ -284,10 +343,56 @@ export default function ChatSection({
 
   return (
     <div className="bg-masterly-panel rounded-2xl p-4 mt-3 border border-masterly-border shadow-sm text-masterly-navy flex flex-col flex-1 min-h-[200px] max-h-[65vh] transition-all duration-300 ease-smooth">
-      <h2 className="text-sm font-semibold mb-3">
-        {lang === "hi" ? "गणित शिक्षक" : "Math Teacher"}
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold">
+          {lang === "hi" ? "अध्यापक सहायक" : "Learning Assistant"}
+        </h2>
+        {selectedSubject && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-masterly-creamDark px-2 py-1 rounded-full border border-masterly-border">
+              📚 {selectedSubject}
+            </span>
+            {/* New Chat Button */}
+            <button
+              onClick={handleNewChat}
+              className="p-1 hover:bg-masterly-creamDark rounded-lg transition-all duration-200 text-xs"
+              title={lang === "hi" ? "नया चैट" : "New Chat"}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        )}
+      </div>
 
+      {/* Subject Selection Panel */}
+      {!selectedSubject && (
+        <div className="bg-white rounded-xl p-4 mb-3 border border-masterly-border">
+          <h3 className="text-sm font-semibold mb-3 text-center">
+            {lang === "hi" ? "विषय चुनें:" : "Select a Subject:"}
+          </h3>
+          {loadingSubjects ? (
+            <div className="text-center py-4">
+              <div className="inline-block w-4 h-4 border-2 border-masterly-muted border-t-masterly-navy rounded-full animate-spin"></div>
+            </div>
+          ) : availableSubjects.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {availableSubjects.map((subject) => (
+                <button
+                  key={subject}
+                  onClick={() => handleSelectSubject(subject)}
+                  className="px-3 py-2 text-xs rounded-lg border border-masterly-border bg-masterly-creamLight hover:bg-masterly-creamDark transition-all duration-200 active:scale-95"
+                >
+                  {subject}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-xs text-masterly-muted py-4">
+              {lang === "hi" ? "कोई विषय उपलब्ध नहीं है।" : "No subjects available."}
+            </div>
+          )}
+        </div>
+      )}
 
       <div 
         className="flex-1 overflow-y-auto space-y-3 text-sm pr-1 scroll-smooth" 
@@ -354,53 +459,55 @@ export default function ChatSection({
       {/* Success animation */}
       {showSuccessAnimation && <SuccessAnimation onComplete={() => setShowSuccessAnimation(false)} />}
 
-      <div className="flex items-center mt-3 bg-masterly-input rounded-2xl px-3 py-2 shrink-0 space-x-2 min-h-[48px] border border-masterly-border">
-        <label className="p-2 hover:bg-masterly-creamDark rounded-xl cursor-pointer transition-all duration-200 active:scale-95 min-w-[40px] min-h-[40px] flex items-center justify-center">
-          <Image className="text-masterly-muted" size={18} aria-hidden="true" />
+      {/* Input area - only show if subject selected */}
+      {selectedSubject && (
+        <div className="flex items-center mt-3 bg-masterly-input rounded-2xl px-3 py-2 shrink-0 space-x-2 min-h-[48px] border border-masterly-border">
+          <label className="p-2 hover:bg-masterly-creamDark rounded-xl cursor-pointer transition-all duration-200 active:scale-95 min-w-[40px] min-h-[40px] flex items-center justify-center">
+            <Image className="text-masterly-muted" size={18} aria-hidden="true" />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+              aria-label={lang === "hi" ? "छवि अपलोड करें" : "Upload image"}
+            />
+          </label>
           <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-            aria-label={lang === "hi" ? "छवि अपलोड करें" : "Upload image"}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              lang === "hi" ? "अपना सवाल लिखें..." : "Ask your question..."
+            }
+            className="flex-1 bg-transparent outline-none text-sm text-masterly-navy placeholder-masterly-muted"
+            onFocus={() => setIsChatExpanded(true)}
+            aria-label={lang === "hi" ? "अपना सवाल लिखें" : "Ask your question"}
           />
-        </label>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            lang === "hi" ? "अपना सवाल लिखें..." : "Enter your text..."
-          }
-          className="flex-1 bg-transparent outline-none text-sm text-masterly-navy placeholder-masterly-muted"
-          onFocus={() => setIsChatExpanded(true)}
-          aria-label={lang === "hi" ? "अपना सवाल लिखें" : "Enter your text"}
-        />
-        <button
-  onClick={() => handleSend()}
-  disabled={loading}
-  className="ml-1 bg-masterly-amber disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center min-w-[40px] min-h-[40px]"
-  style={{ backgroundColor: "#FBB33E" }}
->
-  {loading ? (
-    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-  ) : (
-    <span>&gt;</span>
-  )}
-</button>
+          <button
+            onClick={() => handleSend()}
+            disabled={loading}
+            className="ml-1 bg-masterly-amber disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center min-w-[40px] min-h-[40px]"
+            style={{ backgroundColor: "#FBB33E" }}
+          >
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <span>&gt;</span>
+            )}
+          </button>
 
-{/* NEW CHECK BUTTON */}
-<button
-  onClick={() => handleCheck()}
-  disabled={loading}
-  className="ml-1 bg-masterly-blue disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center min-w-[40px] min-h-[40px]"
-  style={{ backgroundColor: "#07A0FD" }}
->
-  ✔
-</button>
-
-      </div>
+          {/* Check Button */}
+          <button
+            onClick={() => handleCheck()}
+            disabled={loading}
+            className="ml-1 bg-masterly-blue disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 hover:brightness-110 active:scale-95 shadow-sm flex items-center justify-center min-w-[40px] min-h-[40px]"
+            style={{ backgroundColor: "#07A0FD" }}
+          >
+            ✔
+          </button>
+        </div>
+      )}
     </div>
   );
 }

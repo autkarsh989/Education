@@ -21,21 +21,29 @@ export const postRequest = async (url, data = {}, params = {}) => {
 
 // 🧩 Session Management
 let currentSessionId = localStorage.getItem("session_id") || null;
+let currentSubject = localStorage.getItem("subject") || null;
 
 // --- Send message to FastAPI backend using username ---
-export const sendToGemini = async (input, username) => {
+export const sendToGemini = async (input, username, subject = null) => {
   try {
     if (!currentSessionId) {
       currentSessionId = crypto.randomUUID();
       localStorage.setItem("session_id", currentSessionId);
     }
 
+    // Store subject for subsequent messages
+    if (subject) {
+      currentSubject = subject;
+      localStorage.setItem("subject", subject);
+    }
+
     const payload = {
       text: input.text || "",
       image: input.image?.data || null,
-      time_taken: input.time_taken || 0, // ⏱️ added here
+      time_taken: input.time_taken || 0, // ⏱️ time tracking
       sender: "user",
       session_id: currentSessionId,
+      subject: currentSubject || subject,  // Include subject
     };
 console.log(payload)
     if (!username) throw new Error("Username is required");
@@ -55,16 +63,15 @@ console.log(payload)
 
 export const resetSession = () => {
   currentSessionId = null;
+  currentSubject = null;
 
   // 🧹 Clean all storage
   localStorage.removeItem("session_id");
+  localStorage.removeItem("subject");
   localStorage.removeItem("chatMessages");
   sessionStorage.clear();
 
   console.log("🔄 Chat session reset successfully");
-
-  // ✅ Force navigation reset (not just reload)
-  // trigger re-render of Home
 };
 
 // Allow other modules to explicitly set the current session id
@@ -78,12 +85,31 @@ export const setSessionId = (id) => {
   }
 };
 
+// Set the current subject
+export const setSubject = (subject) => {
+  if (!subject) return;
+  currentSubject = subject;
+  try {
+    localStorage.setItem("subject", subject);
+  } catch (e) {
+    // ignore storage errors
+  }
+};
+
 export const getSessionId = () => currentSessionId;
-export const sendCheckRequest = async (input, username) => {
+export const getSubject = () => currentSubject;
+
+export const sendCheckRequest = async (input, username, subject = null) => {
   try {
     if (!currentSessionId) {
       currentSessionId = crypto.randomUUID();
       localStorage.setItem("session_id", currentSessionId);
+    }
+
+    // Store subject for subsequent messages
+    if (subject) {
+      currentSubject = subject;
+      localStorage.setItem("subject", subject);
     }
 
     const payload = {
@@ -92,6 +118,7 @@ export const sendCheckRequest = async (input, username) => {
       time_taken: input.time_taken || 0,
       sender: "user",
       session_id: currentSessionId,
+      subject: currentSubject || subject,  // Include subject
     };
 
     const response = await postRequest(`/chat/send/check/${username}`, payload);

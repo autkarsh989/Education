@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException ,Header
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 import logging
 from models.schemas import Message as MessageSchema, Chat as ChatSchema
-from models.models import Chat, Message,User
+from models.models import Chat, Message, User
 from helper import get_db
 import base64, uuid
 import os, json
@@ -15,13 +15,14 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 # Read from environment: True → user must be logged in, False → guest allowed
 CHAT_AUTH_REQUIRED = os.getenv("CHAT_AUTH_REQUIRED", "true").lower() == "true"
+
 @router.post("/send/instant/{username}")
 def send_message_instant(
     username: str,
     message: MessageSchema,
     db: Session = Depends(get_db),
 ):
-    """Send a message using username — return only bot’s reply."""
+    """Send a message using username — return only bot's reply."""
     # --- Look up user ---
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -37,8 +38,14 @@ def send_message_instant(
             chat = Chat(
                 title=llm.get_chat_title(message.text),
                 session_id=session_id,
+                subject=message.subject,  # Store the selected subject
             )
             db.add(chat)
+            db.commit()
+            db.refresh(chat)
+        elif not chat.subject and message.subject:
+            # Update subject if it wasn't set before
+            chat.subject = message.subject
             db.commit()
             db.refresh(chat)
 
@@ -55,12 +62,6 @@ def send_message_instant(
 
         # ✅ Update user's time metrics
         if message.time_taken and message.time_taken > 0:
-            # Use the column expression (User.total_time_taken) as the key
-            # — don't use the instance value `user.total_time_taken` which is a float
-            # (that caused the "got 0.0" error when used as a dict key).
-            from sqlalchemy import func
-
-            # Safely add time_taken; coalesce handles NULLs in the DB.
             db.query(User).filter(User.id == user_id).update(
                 {
                     User.total_time_taken: (func.coalesce(User.total_time_taken, 0.0) + (message.time_taken)/60),
@@ -68,40 +69,8 @@ def send_message_instant(
                 synchronize_session=False,
             )
             db.commit()
-        #  Check if user has given final answer
-        
-        
-            # Load previous messages for context
-            previous_messages = (
-                db.query(Message)
-                .filter(Message.chat_id == chat.id)
-                .order_by(desc(Message.id))
-                .limit(10)
-                .all()
-            )
-            previous_messages.reverse()
 
-            # Convert to conversation format
-            conversation = [
-                {"role": "assistant" if m.sender == "bot" else "user", "content": m.text}
-                for m in previous_messages
-                if m.text
-            ]
-
-            # Helper to load class topics
-            def get_topics_for_class(level):
-                try:
-                    base = Path(__file__).resolve().parents[1] / "syllabus" / "topics.json"
-                    if not base.exists():
-                        return None
-                    data = json.load(open(base, encoding="utf-8"))
-                    key = f"class_{str(level).strip().replace('class_', '')}"
-                    return data.get(key)
-                except Exception:
-                    return None
-
-            topics = get_topics_for_class(user.class_level or user.level)
-
+        # Fetch previous messages for context
         previous_messages = (
             db.query(Message)
             .filter(Message.chat_id == chat.id)
@@ -114,7 +83,7 @@ def send_message_instant(
             [f"{msg.sender.capitalize()}: {msg.text}" for msg in previous_messages if msg.text]
         )
 
-        # Generate hint
+        # Generate hint with subject context
         if message.image:
             image_b64 = (
                 message.image.split(",")[1]
@@ -124,20 +93,21 @@ def send_message_instant(
             bot_text = llm.generate_hint(
                 question=message.text,
                 last_context=last_context,
-                    image_b64=image_b64,
-                    user_class=user.class_level or user.level,
-                    parent_feedback=getattr(user, "Parent_feedback", None),
+                image_b64=image_b64,
+                user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
+                parent_feedback=getattr(user, "Parent_feedback", None),
             )
         else:
             bot_text = llm.generate_hint(
                 question=message.text,
                 last_context=last_context,
-                    user_class=user.class_level or user.level,
-                    topics=topics,
-                    parent_feedback=getattr(user, "Parent_feedback", None),
+                user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
+                parent_feedback=getattr(user, "Parent_feedback", None),
             )
 
-        logger.info(f"Generated bot response for send_message_instant")
+        logger.info(f"Generated bot response for send_message_instant for subject: {chat.subject}")
 
         # --- Save bot reply ---
         bot_msg = Message(
@@ -165,7 +135,7 @@ def send_message_instant(
 
 @router.post("/send/{username}", response_model=ChatSchema)
 def send_message_by_username(
-    username: str,                       # path variable
+    username: str,
     message: MessageSchema,
     db: Session = Depends(get_db),
 ):
@@ -187,10 +157,16 @@ def send_message_by_username(
         chat = db.query(Chat).filter(Chat.session_id == session_id).first()
         if not chat:
             chat = Chat(
-                title=message.text[:20] if message.text else "Image Chat",
+                title=llm.get_chat_title(message.text),
                 session_id=session_id,
+                subject=message.subject,  # Store the selected subject
             )
             db.add(chat)
+            db.commit()
+            db.refresh(chat)
+        elif not chat.subject and message.subject:
+            # Update subject if it wasn't set before
+            chat.subject = message.subject
             db.commit()
             db.refresh(chat)
 
@@ -221,7 +197,7 @@ def send_message_by_username(
             [f"{msg.sender.capitalize()}: {msg.text}" for msg in previous_messages if msg.text]
         )
 
-
+        # Generate hint with subject context
         if message.image:
             # Extract base64 cleanly (support both with/without 'data:' prefix)
             image_b64 = (
@@ -234,6 +210,7 @@ def send_message_by_username(
                 last_context=last_context,
                 image_b64=image_b64,
                 user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
                 parent_feedback=getattr(user, "Parent_feedback", None),
             )
         else:
@@ -241,14 +218,11 @@ def send_message_by_username(
                 question=message.text,
                 last_context=last_context,
                 user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
                 parent_feedback=getattr(user, "Parent_feedback", None),
             )
 
-       
-        #try
-        # bot_text=llm.generate_hint(message.text)
-        logger.info(f"Generated bot response for user {username}")
-
+        logger.info(f"Generated bot response for user {username} with subject: {chat.subject}")
 
         # --- Save bot reply ---
         bot_msg = Message(
@@ -270,6 +244,7 @@ def send_message_by_username(
 
 @router.get("/user/{username}", response_model=list[ChatSchema])
 def get_chats_by_username(username: str, db: Session = Depends(get_db)):
+    """Get all chats for a user."""
     # Find user by username
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -284,9 +259,10 @@ def get_chats_by_username(username: str, db: Session = Depends(get_db)):
     )
     return chats
 
-# --- New: Get chats by session_id ---
+
 @router.get("/session/{session_id}", response_model=list[ChatSchema])
 def get_chats_by_session(session_id: str, db: Session = Depends(get_db)):
+    """Get chats by session_id."""
     chats = db.query(Chat).filter(Chat.session_id == session_id).all()
     if not chats:
         raise HTTPException(status_code=404, detail="No chats for this session")
@@ -294,13 +270,15 @@ def get_chats_by_session(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/send/check/{username}")
-##divide the check answer
 def check_message_instant(
     username: str,
     message: MessageSchema,
     db: Session = Depends(get_db),
 ):
-    """Send a message using username — return only bot’s reply."""
+    """
+    Send a message and generate a hint response.
+    Scoring logic has been removed - focus is on learning guidance.
+    """
     # --- Look up user ---
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -316,8 +294,14 @@ def check_message_instant(
             chat = Chat(
                 title=llm.get_chat_title(message.text),
                 session_id=session_id,
+                subject=message.subject,  # Store the selected subject
             )
             db.add(chat)
+            db.commit()
+            db.refresh(chat)
+        elif not chat.subject and message.subject:
+            # Update subject if it wasn't set before
+            chat.subject = message.subject
             db.commit()
             db.refresh(chat)
 
@@ -334,12 +318,6 @@ def check_message_instant(
 
         # ✅ Update user's time metrics
         if message.time_taken and message.time_taken > 0:
-            # Use the column expression (User.total_time_taken) as the key
-            # — don't use the instance value `user.total_time_taken` which is a float
-            # (that caused the "got 0.0" error when used as a dict key).
-            from sqlalchemy import func
-
-            # Safely add time_taken; coalesce handles NULLs in the DB.
             db.query(User).filter(User.id == user_id).update(
                 {
                     User.total_time_taken: (func.coalesce(User.total_time_taken, 0.0) + (message.time_taken)/60),
@@ -347,151 +325,8 @@ def check_message_instant(
                 synchronize_session=False,
             )
             db.commit()
-        #  Check if user has given final answer
-        
-        try:
-            # Load previous messages for context
-            previous_messages = (
-                db.query(Message)
-                .filter(Message.chat_id == chat.id)
-                .order_by(desc(Message.id))
-                .limit(10)
-                .all()
-            )
-            previous_messages.reverse()
 
-            # Convert to conversation format
-            conversation = [
-                {"role": "assistant" if m.sender == "bot" else "user", "content": m.text}
-                for m in previous_messages
-                if m.text
-            ]
-
-            # Helper to load class topics
-            def get_topics_for_class(level):
-                try:
-                    base = Path(__file__).resolve().parents[1] / "syllabus" / "topics.json"
-                    if not base.exists():
-                        return None
-                    data = json.load(open(base, encoding="utf-8"))
-                    key = f"class_{str(level).strip().replace('class_', '')}"
-                    return data.get(key)
-                except Exception:
-                    return None
-
-            topics = get_topics_for_class(user.class_level or user.level)
-
-            # Ask LLM to detect if final + correct
-            judge = llm.check_answer(conversation=conversation, class_topics=topics)
-            logger.debug(f"Judge output: {judge}")
-
-            if isinstance(judge, dict):
-                is_final = judge.get("final", False)
-                logger.info(f"🔍 Answer Check for user {user_id}: final={is_final}, judge={judge}")
-                
-                if is_final:
-                    # Use atomic UPDATEs to avoid race conditions and ensure counters increment correctly.
-                    try:
-                        is_correct = bool(judge.get("correct"))
-                        logger.info(f"✅ FINAL ANSWER for user {user_id}: correct={is_correct}")
-
-                        if is_correct:
-                            logger.info(f"✓ Correct answer detected for user {user_id} (atomic update)")
-                            db.query(User).filter(User.id == user_id).update(
-                                {
-                                    User.total_attempts: (User.total_attempts + 1),
-                                    User.correct_attempts: (User.correct_attempts + 1),
-                                    User.score: (User.score + 1.0),
-                                },
-                                synchronize_session=False,
-                            )
-                        else:
-                            logger.info(f"✗ Incorrect answer detected for user {user_id} (atomic update)")
-                            db.query(User).filter(User.id == user_id).update(
-                                {
-                                    User.total_attempts: (User.total_attempts + 1),
-                                    User.score: (User.score - 0.25),
-                                },
-                                synchronize_session=False,
-                            )
-
-                        # Commit the atomic update
-                        db.commit()
-
-                        # Clamp negative score to 0.0 if it happened
-                        try:
-                            u_after = db.query(User).filter(User.id == user_id).first()
-
-                            # Level-up when score crosses threshold
-                            if is_correct and u_after and (u_after.score or 0.0) > 50.0:
-                                db.query(User).filter(User.id == user_id).update(
-                                    {
-                                        User.level: (User.level + 1),
-                                        User.score: 0.0,
-                                    },
-                                    synchronize_session=False,
-                                )
-                                db.commit()
-                                u_after = db.query(User).filter(User.id == user_id).first()
-
-                            if u_after and (u_after.score or 0.0) < 0.0:
-                                db.query(User).filter(User.id == user_id).update({User.score: 0.0}, synchronize_session=False)
-                                db.commit()
-
-                            # Log resulting values for verification
-                            if u_after:
-                                logger.debug(
-                                    f"Post-update user id={user_id} -> total_attempts={u_after.total_attempts}, "
-                                    f"correct_attempts={u_after.correct_attempts}, score={u_after.score}"
-                                )
-                            else:
-                                logger.warning(f"User id={user_id} not found after update")
-                        except Exception as requery_err:
-                            # Non-fatal: log and continue
-                            db.rollback()
-                            logger.warning(f"Could not re-query/normalize user id={user_id} after commit: {requery_err}")
-
-                        # Update streaks based on correctness: maintain current_streak and max_streak
-                        try:
-                            u_after = db.query(User).filter(User.id == user_id).first()
-                            if u_after:
-                                prev_streak = int(u_after.current_streak or 0)
-                                prev_max = int(u_after.max_streak or 0)
-                                # Compute new streak: if last update was a correct answer, increment, else reset to 0
-                                if is_correct:
-                                    new_streak = prev_streak + 1
-                                else:
-                                    new_streak = 0
-
-                                new_max = prev_max
-                                if new_streak > prev_max:
-                                    new_max = new_streak
-
-                                # Only write if changed
-                                if new_streak != prev_streak or new_max != prev_max:
-                                    db.query(User).filter(User.id == user_id).update(
-                                        {
-                                            User.current_streak: new_streak,
-                                            User.max_streak: new_max,
-                                        },
-                                        synchronize_session=False,
-                                    )
-                                    db.commit()
-                        except Exception as streak_err:
-                            db.rollback()
-                            logger.warning(f"Could not update streaks for user id={user_id}: {streak_err}")
-                    except Exception as commit_err:
-                        db.rollback()
-                        logger.error(f"Failed to apply atomic user update for id={user_id}: {commit_err}")
-                else:
-                    logger.info(f"⏳ Not a final answer yet for user {user_id} - awaiting final submission")
-
-        except Exception as e:
-            logger.warning(f"Answer-check skipped due to error: {e}")
-
-        # ------------------------------------------
-        #  2️⃣ Generate bot’s reply (LLM Hint)
-        # ------------------------------------------
+        # Fetch previous messages for context
         previous_messages = (
             db.query(Message)
             .filter(Message.chat_id == chat.id)
@@ -504,7 +339,7 @@ def check_message_instant(
             [f"{msg.sender.capitalize()}: {msg.text}" for msg in previous_messages if msg.text]
         )
 
-        # Generate hint
+        # Generate hint response
         if message.image:
             image_b64 = (
                 message.image.split(",")[1]
@@ -514,19 +349,21 @@ def check_message_instant(
             bot_text = llm.generate_hint(
                 question=message.text,
                 last_context=last_context,
-                    image_b64=image_b64,
-                    user_class=user.class_level or user.level,
-                    parent_feedback=getattr(user, "Parent_feedback", None),
+                image_b64=image_b64,
+                user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
+                parent_feedback=getattr(user, "Parent_feedback", None),
             )
         else:
             bot_text = llm.generate_hint(
                 question=message.text,
                 last_context=last_context,
                 user_class=user.class_level or user.level,
+                subject=chat.subject,  # Pass the subject
                 parent_feedback=getattr(user, "Parent_feedback", None),
             )
 
-        logger.info(f"Generated bot response for user {username}")
+        logger.info(f"Generated bot response for user {username} with subject: {chat.subject}")
 
         # --- Save bot reply ---
         bot_msg = Message(
@@ -547,7 +384,6 @@ def check_message_instant(
         }
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        logger.error(f"Error in check_message_instant: {e}", exc_info=True)
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-

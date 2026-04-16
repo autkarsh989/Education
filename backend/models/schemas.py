@@ -71,6 +71,7 @@ class Message(BaseModel):
     sender: str
     session_id: Optional[str] = None
     user_id: Optional[int] = None
+    subject: Optional[str] = None  # Subject for the chat session
     time_taken: Optional[float] = 0.0
 
 
@@ -78,6 +79,7 @@ class Chat(BaseModel):
     id: int
     title: str
     session_id: Optional[str] = None
+    subject: Optional[str] = None  # e.g., "Biology", "Physics", "Chemistry"
     messages: List[Message]
 
 

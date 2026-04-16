@@ -4,7 +4,8 @@ import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from backend.vector_ingest_service import ingest_zip
+from vector_ingest_service import ingest_zip
+
 
 BASE_DIR = Path(__file__).resolve().parent
 HTML_FILE = BASE_DIR / "vector_ingest_local.html"
@@ -32,7 +33,7 @@ class LocalIngestHandler(BaseHTTPRequestHandler):
         self.wfile.write(html)
 
     def do_POST(self):
-        if self.path != "/upload":
+        if self.path != "/vector-ingest/upload-zip":
             self.send_error(404, "Not Found")
             return
 

@@ -125,7 +125,547 @@
       "zip_file": "lebo1dd.zip",
       "status": "ingested",
       "ingested_at": "2026-04-13T12:03:39.003524"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech101.pdf",
+      "file_hash": "99d19dbb008280c361496c6e184be91b214d70fb40837749c692c8c52add341f",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:15:54.791935"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech102.pdf",
+      "file_hash": "ca0f380fbfe6a0a4363251a646aafe451fe99c5fc8dba1aa9317438d2bc8705a",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:15:58.354225"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech103.pdf",
+      "file_hash": "7c822864c114aa805cc63b1e44a028d16d0d4704afc3ad304d4dc4054945f320",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:15:59.317574"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech104.pdf",
+      "file_hash": "4f33bf2825d1d693b78ae52c13002f45bce3881a3934790eaf34133b6ccb8972",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:16:02.019494"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech105.pdf",
+      "file_hash": "9cca0d995461bb4ba9e02dd4c40b9c3ba40fccfdc132f4a8a0959a82cea209b3",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:16:03.534942"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech1a1.pdf",
+      "file_hash": "f6c8d6469430c6634d63c99bcd9a64375a1dbf4f468cc569f5d96ebf556ba8d4",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:16:03.747165"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech1an.pdf",
+      "file_hash": "b3c1e256b4fca5e45f13b2dca59fd80e0ee4ffd85e4645d01e13a76f66b388ae",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:16:03.805223"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech1ps.pdf",
+      "file_hash": "4ee7d6795559fc185f092a5f39431420d4f45aacddbe95dfa84d79056750b3d5",
+      "zip_file": "lech1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:16:05.093294"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech201.pdf",
+      "file_hash": "faca920f61f7ac668957201f3a8093d204f6364949f4e1ad733af6b01cc4cb17",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:18.881138"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech202.pdf",
+      "file_hash": "e7aedb4059f435db596bd76015684fa1186be8d6bee4ee4a6c3f2e81f58585be",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:21.655392"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech203.pdf",
+      "file_hash": "23067221e09a8a61873f3a3a587a2ecb15d3104aeea00914dbc15111e772154e",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:25.073918"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech204.pdf",
+      "file_hash": "a267ffea998fb68174c2abc87f79a71e646e93460efa73bbe15796a995cea29a",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:26.884176"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech205.pdf",
+      "file_hash": "a6e215335dff95dfc4023bfbf1a994cbca7b35890ab75952a6cc1c390ba9c072",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:29.103368"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech2an.pdf",
+      "file_hash": "e6bc2fc93811b71b60ef94f3e7ef17170cd03186f257b992b0211d0529ef9ec3",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:29.520244"
+    },
+    {
+      "class_number": "12",
+      "subject": "Chemistry",
+      "source_pdf": "lech2ps.pdf",
+      "file_hash": "cced7943f47e78ef4abe798243021a46a02c39a5eff719b534cd153377fd9e58",
+      "zip_file": "lech2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:17:30.637023"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy101.pdf",
+      "file_hash": "793cdd4b82cdddfc866f24772c678b2cf98a98e22fbba077b480ebc06a64e5ae",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:24.986921"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy102.pdf",
+      "file_hash": "6a47f5f79c162acba7b4e59cee9259619ffa6ea2db9ab0c49237feeb684cff3b",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:27.285946"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy103.pdf",
+      "file_hash": "5632702074b161a701f8dff987af50bc9c74348038205c31a9bc7a8e310822dc",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:27.412087"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy104.pdf",
+      "file_hash": "f82c4ed1df4288df2a59a230006e571f377030644fd479dae09bada8edcb4ad0",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:28.071837"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy105.pdf",
+      "file_hash": "c6335f23fa1ff55552829ceda73586d277347b7e189978115152b04be2faa4b0",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:28.178026"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy106.pdf",
+      "file_hash": "92c7e1e1537366cb22ea009e5c7810a24b92bdb8b27560a018dac52c35702a19",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:28.682820"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy107.pdf",
+      "file_hash": "6101b8c1f2c809c4e54cb19b7978e0fe851e294f535355790cdb6b2456108a25",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:28.918786"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy108.pdf",
+      "file_hash": "a940c0afe1f6eef0f8dd52fe25f98570382fa863e45737d487ec488bccf0eccf",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:29.027538"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy1a1.pdf",
+      "file_hash": "2c05ab8166faeb398b1023438ac73bc87e717158f1ea93754be6b6eabe7eef78",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:29.125861"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy1ps.pdf",
+      "file_hash": "b6a150ca5b2b4a913595583ffeacea6aa35919fe3a15d20b1825faaa0072daab",
+      "zip_file": "legy1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:19:29.396754"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy201.pdf",
+      "file_hash": "1aa2bc65e6f3de00dcf867a44592daffe0a5465c120cd1196385c045c226e906",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:35.373929"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy202.pdf",
+      "file_hash": "348f0fbd7fce5f14923c0fa145a64e1359ac5af7da5e1a38b9a8c34315442414",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:35.462926"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy203.pdf",
+      "file_hash": "c02dd7404aa2ee484400299de1327c455b7499c93ea8b434cc4044eb9046cca4",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:35.690827"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy204.pdf",
+      "file_hash": "4665c011f481a2d749feb35c89f7d957cb29554c1de31704947e70a1be2ca9d1",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:35.842582"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy205.pdf",
+      "file_hash": "821f7a017a02300aaf7b58e246893d54fd50d856398726b76f0caca725cb0ea2",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:35.959278"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy206.pdf",
+      "file_hash": "08004ea58983a556f3e9637aa03a51b0de3a1d4b852910fb2570e5f693aa7e2e",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:36.058466"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy207.pdf",
+      "file_hash": "e75b1cf08e9872e0a742125331b52c167df5c4860d4c5e824e3b645596b9f089",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:36.191513"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy208.pdf",
+      "file_hash": "c80fd56dffbc53cdad4c9a2f3f5b28d4d3f7bb7191c0c66d2cd7f369b6cd92bd",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:36.321752"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy209.pdf",
+      "file_hash": "b5d4e9c7e2710f13ac55f9739ac1ecf3e02f27100785a10b518ee3ad584c016c",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:36.419856"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy2a1.pdf",
+      "file_hash": "1b4adf787eb11be65509adeb5beb7ba6166aaafc8faabb0ca2a6635a6ff5b0d3",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:36.658040"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy2ps.pdf",
+      "file_hash": "d2d6236684a3709e48e24ae04308d375e3dca2bc4d22e2e7d277fa1425a77c67",
+      "zip_file": "legy2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:20:37.124379"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy301.pdf",
+      "file_hash": "915de92798ddaeaabeb39766a675211e547cecd52024a89ff1c48f692921e5fb",
+      "zip_file": "legy3dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:21:47.480210"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy302.pdf",
+      "file_hash": "dd46c2063be48aa72e1eb47529140e9d63454dadec34c3d0980f134ef3c6ea33",
+      "zip_file": "legy3dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:21:47.606358"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy303.pdf",
+      "file_hash": "b118137042271568752912f5a8baf900d0a0f57b4eaba134029689b354bdb4e2",
+      "zip_file": "legy3dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:21:49.537278"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy304.pdf",
+      "file_hash": "9729996bada16d99bc32eed799a575f37130e6e306a22606f9be6d14fd71fa2a",
+      "zip_file": "legy3dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:21:50.707626"
+    },
+    {
+      "class_number": "12",
+      "subject": "Geography",
+      "source_pdf": "legy3ps.pdf",
+      "file_hash": "5dfc77ad4f0fbb6b01722b30030fc69b3b0c8fcb66b2d1228ae81ec86cdc0dfc",
+      "zip_file": "legy3dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:21:52.020557"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh101.pdf",
+      "file_hash": "9d2abedec1052e72b51edbe1fe902f070f1debfca02c80d4d77e86003097848a",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:34.039885"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh102.pdf",
+      "file_hash": "7387c02883d71d3f07a35f6c59b207677d7f62ad83e28a1f036f75c11e76531a",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:35.076269"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh103.pdf",
+      "file_hash": "8d19ddd4eeeedb09d85a4aaedb8eef08f1642d9b48986ea80cc654008e2c5450",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:37.497554"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh104.pdf",
+      "file_hash": "919d031e5c8a8cea13361d0ecd3791064d85b58bf315470c952a6fd60593e386",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:38.505337"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh105.pdf",
+      "file_hash": "fba3ab4455b472773e03524fb25d263732e3e57c6e1ad7bbcc889a6eaa39ee4b",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:40.008732"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh106.pdf",
+      "file_hash": "8fa2f383f84c031011fc1ce2938fe0221f2d7df5570493bcb27e59de9e7a7060",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:41.623113"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh1a1.pdf",
+      "file_hash": "12f02928bac3e568be62a89702cff0a1ae846bd55ece758e3a4c757a076cb392",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:41.772027"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh1a2.pdf",
+      "file_hash": "af5ae35358b05ab9fd3ea8b255e3837d4aa698cdb6875dabdca2fc35e72d23c0",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:42.513111"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh1an.pdf",
+      "file_hash": "6953f1a7117fbd87aa493743e345531db1caeeec0fb16197ecbbae426543a191",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:42.955139"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh1ps.pdf",
+      "file_hash": "96441eb9592091d45369a43aa9f9de8d4a439cf95eaac28baf1a04372feaba65",
+      "zip_file": "lemh1dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:23:43.688349"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh201.pdf",
+      "file_hash": "bc4b4a0b2d3ec8d71d479c0ea549969028c2ac28d3613e97a888e2845144112f",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:50.387500"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh202.pdf",
+      "file_hash": "d15f9a85ea9e3a478769a37f46db76decbe3505e2453ee165c075cd76906945f",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:50.757757"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh203.pdf",
+      "file_hash": "fb6505ab814389b54088295036dde2a803d75520df4f83b942f90f4755c09b58",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:52.256092"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh204.pdf",
+      "file_hash": "c41979c010dd06c60aebf29e2a22ff211eff8e5aa64e6f23377dcdf9afcee985",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:57.760184"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh205.pdf",
+      "file_hash": "f68fe586ef43f86f5d75dc3210b02860df7b65957133cb63a2ff498e563c1824",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:58.525791"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh206.pdf",
+      "file_hash": "279e24218606f8e26d821cfdbf904132dc3c7f9b4064670afd19499bee64e32b",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:59.135146"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh207.pdf",
+      "file_hash": "354482a4adbacf6ece1a6a3e2cf49e9b1034cdb0a8cd7831822f790d54cb2b85",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:24:59.902641"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh2an.pdf",
+      "file_hash": "013d71aa59a91b2fc61c93163fc6dc2fabb13c94b9b35d4b95c0f21467f8efc6",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:25:01.190571"
+    },
+    {
+      "class_number": "12",
+      "subject": "Maths",
+      "source_pdf": "lemh2ps.pdf",
+      "file_hash": "288843e5359d15b4bcd559392f7f28a8f8dc5592b7cd3213cbf70255729a202a",
+      "zip_file": "lemh2dd.zip",
+      "status": "ingested",
+      "ingested_at": "2026-04-16T05:25:01.649521"
     }
   ],
-  "updated_at": "2026-04-13T12:03:55.504452"
+  "updated_at": "2026-04-16T05:25:24.844914"
 }

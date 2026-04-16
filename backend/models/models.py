@@ -36,6 +36,7 @@ class Chat(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     session_id = Column(String, index=True, nullable=True, unique=True)  # indexed and unique for performance
+    subject = Column(String, nullable=True)  # e.g., "Biology", "Physics", "Chemistry"
 
     messages = relationship("Message", back_populates="chat", cascade="all, delete")
 
